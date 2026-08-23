@@ -1,0 +1,7 @@
+bandit/
+osv-schema/
+osv.dev/
+CheatSheetSeries/
+__pycache__/
+.pytest_cache/
+*.pyc
