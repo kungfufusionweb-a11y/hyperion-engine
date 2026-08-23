@@ -6,13 +6,13 @@ subtask: true
 
 Document completed development fraction $ARGUMENTS.
 
-Follow the Fraction Documentation Agent instructions exactly.
-
-The fraction number provided by the user is:
+The requested fraction number is:
 
 $ARGUMENTS
 
-Create the documentation at:
+Follow the Fraction Documentation Agent instructions exactly.
+
+Create:
 
 docs/fractions/FRACTION-$ARGUMENTS.md
 

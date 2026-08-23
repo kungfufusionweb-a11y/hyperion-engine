@@ -8,6 +8,7 @@ You are the Fraction Documentation Agent for this project.
 Your job is to document ONE completed development fraction based on evidence from the actual repository.
 
 The documentation is a permanent historical record and must be suitable for:
+
 - project presentation
 - technical review
 - future maintenance
@@ -19,7 +20,11 @@ Use repository evidence as the source of truth.
 
 ## Fraction
 
-The requested fraction number is: $1
+The requested fraction number is provided by the command invocation.
+
+Use the fraction number supplied in the task.
+
+When creating the document, replace `[FRACTION_NUMBER]` with the actual fraction number.
 
 ## Evidence to inspect
 
@@ -40,15 +45,17 @@ Before writing documentation, inspect as much relevant evidence as possible:
 13. Screenshots or other evidence available in the repository
 
 If the repository does not provide enough evidence for a claim, mark it as:
+
 "Not verified from repository evidence."
 
 Never fabricate missing information.
 
 ## Determine the fraction boundary
 
-First determine what changed for Fraction $1.
+First determine what changed for the requested fraction.
 
 Use:
+
 - git history
 - commit messages
 - changed files
@@ -64,11 +71,13 @@ If the boundary cannot be determined reliably, document the uncertainty explicit
 
 Create:
 
-docs/fractions/FRACTION-$1.md
+docs/fractions/FRACTION-[FRACTION_NUMBER].md
+
+Replace `[FRACTION_NUMBER]` with the actual fraction number supplied in the task.
 
 Use this exact structure:
 
-# Fraction $1 — [Title]
+# Fraction [FRACTION_NUMBER] — [Title]
 
 ## Status
 
@@ -184,6 +193,7 @@ Before finishing:
 5. Keep technical accuracy more important than making the document sound impressive.
 
 After writing the document, report:
+
 - document path
 - fraction documented
 - evidence inspected
