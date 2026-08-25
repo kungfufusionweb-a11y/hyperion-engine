@@ -25,16 +25,29 @@ _CVSS_BY_SEVERITY = {
     "Low": 3.5,
 }
 
-# Health-score penalties per finding. Chosen so that a handful of Criticals
-# dominates the score (a single Critical costs 15 points) while Low findings
-# only nudge it (-2), matching common industry scorecard weighting where
-# critical issues are ~7x more impactful than informational ones.
-_PENALTY_BY_SEVERITY = {
-    "Critical": 15,
-    "High": 10,
-    "Medium": 5,
-    "Low": 2,
-}
+# Health-score model (exact formula):
+#
+#   health_score = clamp(round(100 - total_penalty), 0, 100)
+#
+# total_penalty is computed over code-level findings (scanner.py) and
+# dependency findings (dependency_check.py) SEPARATELY. Within each
+# bucket, penalties for the same severity have diminishing returns:
+#
+#   code_penalty(S) = FIRST[S] + (n_S - 1) * REPEAT[S]     (n_S >= 1)
+#   dep_penalty(S)  = DEP_WEIGHT * code_penalty(S)
+#
+#   FIRST      = {Critical: 15, High: 10, Medium: 5, Low: 2}
+#   REPEAT     = {Critical:  8, High:  5, Medium: 2, Low: 1}
+#   DEP_WEIGHT = 0.6
+#
+# Rationale: a package carrying 5 separate CVE advisories should NOT cost
+# 5x a single distinct code bug — dependency penalties are both scaled
+# down (DEP_WEIGHT) and diminished per severity. A realistic mix like
+# 3C/6H/5M/1L costs ~75 points (score ~25) instead of flooring at 0,
+# while a truly catastrophic finding load still reaches 0.
+_FIRST_PENALTY_BY_SEVERITY = {"Critical": 15, "High": 10, "Medium": 5, "Low": 2}
+_REPEAT_PENALTY_BY_SEVERITY = {"Critical": 8, "High": 5, "Medium": 2, "Low": 1}
+_DEP_PENALTY_WEIGHT = 0.6
 
 # Base severity per scanner pattern_type. These are deliberately coarse:
 # injection-style sinks are treated as Critical because they are directly
@@ -172,7 +185,20 @@ def _scanner_severity(finding: dict[str, Any]) -> str:
 
 def _dep_severity(finding: dict[str, Any]) -> str:
     severity = _safe_str(finding.get("severity")).capitalize()
-    return severity if severity in _PENALTY_BY_SEVERITY else _UNKNOWN_DEP_SEVERITY
+    return severity if severity in _FIRST_PENALTY_BY_SEVERITY else _UNKNOWN_DEP_SEVERITY
+
+
+def _bucket_penalty(severities: list[str], weight: float = 1.0) -> float:
+    """Diminishing-return penalty for one bucket of severities (see formula above)."""
+    counts = Counter(severities)
+    return sum(
+        weight
+        * (
+            _FIRST_PENALTY_BY_SEVERITY[severity]
+            + (count - 1) * _REPEAT_PENALTY_BY_SEVERITY[severity]
+        )
+        for severity, count in counts.items()
+    )
 
 
 def _dot_escape(text: str) -> str:
@@ -278,33 +304,31 @@ def _build_recommendations(
     }
 
 
-def _build_refactored_code(scan_findings: list[dict[str, Any]]) -> dict[str, str]:
+def _build_refactored_code(scan_findings: list[dict[str, Any]], source_code: str) -> dict[str, str]:
     """
     Safe no-op: the rule-based path does not attempt automated fixes.
 
-    The full original source is not available from findings alone, so we
-    echo back the flagged snippets of the most-flagged file verbatim
-    (snippets are the exact offending lines as captured by the scanner).
+    Contract: refactored_code.full_source echoes the caller-supplied
+    original source text back COMPLETELY UNMODIFIED (character for
+    character). It is never reconstructed from findings.
     The AI layer will replace this with a real refactor proposal later.
     """
-    if not scan_findings:
-        return {"file": "", "language": "", "full_source": ""}
-
-    counts: Counter[str] = Counter()
-    snippets_by_file: dict[str, list[str]] = {}
-    for finding in scan_findings:
-        file_name = _safe_str(finding.get("file"), "unknown.py")
-        snippet = _safe_str(finding.get("snippet"))
-        counts[file_name] += 1
-        if snippet:
-            snippets_by_file.setdefault(file_name, []).append(snippet)
-
-    target_file = max(counts, key=lambda f: (counts[f], f))
-    full_source = "\n".join(snippets_by_file.get(target_file, []))
-    return {"file": target_file, "language": "python", "full_source": full_source}
+    target_file = ""
+    if scan_findings:
+        counts: Counter[str] = Counter(
+            _safe_str(f.get("file"), "unknown.py") for f in scan_findings
+        )
+        target_file = max(counts, key=lambda f: (counts[f], f))
+    return {
+        "file": target_file,
+        "language": "python" if target_file else "",
+        "full_source": source_code,
+    }
 
 
-def generate_fallback_analysis(scan_findings: list[dict], dep_findings: list[dict]) -> dict:
+def generate_fallback_analysis(
+    scan_findings: list[dict], dep_findings: list[dict], source_code: str = ""
+) -> dict:
     """Deterministically build the schema-complete analysis response.
 
     Never raises; always returns every required key even for empty inputs.
@@ -312,13 +336,15 @@ def generate_fallback_analysis(scan_findings: list[dict], dep_findings: list[dic
     try:
         scan_findings = [f for f in (scan_findings or []) if isinstance(f, dict)]
         dep_findings = [f for f in (dep_findings or []) if isinstance(f, dict)]
+        source_code = _safe_str(source_code)
 
-        health_score = 100
+        code_severities: list[str] = []
+        dep_severities: list[str] = []
         vulnerabilities: list[dict[str, Any]] = []
 
         for index, finding in enumerate(scan_findings):
             severity = _scanner_severity(finding)
-            health_score -= _PENALTY_BY_SEVERITY[severity]
+            code_severities.append(severity)
             pattern = _safe_str(finding.get("pattern_type"), "unknown")
             vulnerabilities.append(
                 {
@@ -336,7 +362,7 @@ def generate_fallback_analysis(scan_findings: list[dict], dep_findings: list[dic
 
         for index, finding in enumerate(dep_findings):
             severity = _dep_severity(finding)
-            health_score -= _PENALTY_BY_SEVERITY[severity]
+            dep_severities.append(severity)
             package = _safe_str(finding.get("package"), "unknown-package")
             version = _safe_str(finding.get("installed_version"))
             vuln_id = _safe_str(finding.get("vuln_id")) or "UNKNOWN"
@@ -354,13 +380,20 @@ def generate_fallback_analysis(scan_findings: list[dict], dep_findings: list[dic
                 }
             )
 
+        # Scoring: independent diminishing penalties per bucket (see formula
+        # documented next to _FIRST_PENALTY_BY_SEVERITY above).
+        total_penalty = _bucket_penalty(code_severities) + _bucket_penalty(
+            dep_severities, _DEP_PENALTY_WEIGHT
+        )
+        health_score = int(round(100 - total_penalty))
+
         return {
             "health_score": max(0, min(100, health_score)),
             "vulnerabilities": vulnerabilities,
             "graphviz_dot_script": _build_dot_script(scan_findings),
             "attack_path_poc": _build_attack_path(scan_findings, dep_findings),
             "recommendations": _build_recommendations(scan_findings, dep_findings),
-            "refactored_code": _build_refactored_code(scan_findings),
+            "refactored_code": _build_refactored_code(scan_findings, source_code),
         }
     except Exception:
         # Last-resort guarantee: never raise, always schema-complete.
