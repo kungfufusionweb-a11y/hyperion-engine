@@ -4,4 +4,13 @@ osv.dev/
 CheatSheetSeries/
 __pycache__/
 .pytest_cache/
+.opencode/
+docs/
 *.pyc
+
+# Local prompt & doc files to ignore
+CLAUDE.md
+prompt.md
+hyperion-security-engine-docs.md
+.env
+
