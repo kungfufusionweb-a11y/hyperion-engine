@@ -4,7 +4,7 @@ Sits alongside ai_fallback.py: attempts a real LLM analysis built from the
 scanner findings, dependency findings, and the full source file in ONE
 batched prompt. The model's answer must pass schema_validator.validate_schema()
 before it is returned. On ANY failure — missing API key, invalid JSON, schema
-violation, 25-second timeout, or network/API error — this module falls back to
+violation, 60-second timeout, or network/API error — this module falls back to
 ai_fallback.generate_fallback_analysis(). It never raises and never returns
 a dict that has not passed validate_schema().
 """
@@ -31,9 +31,10 @@ logger = logging.getLogger("hyperion.ai_llm")
 # environment. Endpoint and model are env-overridable so any
 # OpenAI-compatible chat-completions API can be swapped in without code
 # changes. No third-party HTTP dependency: stdlib urllib only.
-# Stopgap: real prompts (full source + findings) take longer than the
-# trivial connectivity-check prompt; 25s accommodates real-world sizes.
-_API_TIMEOUT_SECONDS = 25
+# Measured baseline: this schema's typical output (~1500 tokens) takes
+# ~46s on the current provider/model (3 runs: 46.2s, 46.2s, 46.4s).
+# 60s gives headroom over that baseline without inviting indefinite hangs.
+_API_TIMEOUT_SECONDS = 60
 _ENV_API_KEY = "HYPERION_LLM_API_KEY"
 _ENV_API_URL = "HYPERION_LLM_API_URL"
 _ENV_MODEL = "HYPERION_LLM_MODEL"
@@ -83,7 +84,17 @@ OUTPUT CONTRACT — obey exactly:
 4. refactored_code.full_source must be the COMPLETE corrected file —
    every line, including unchanged ones — never a fragment, an excerpt,
    or a placeholder such as "... rest unchanged ...".
-5. Every key must always be present; use empty lists when there is
+5. BREVITY — keep the output compact without losing analytical value:
+   - Each vulnerabilities[].description must be ONE concise sentence.
+   - attack_path_poc must contain AT MOST 5 steps: group related
+     vulnerabilities into a single combined attack-chain narrative where
+     it makes sense, rather than one step per finding.
+   - Each item in every recommendations list (immediate_fixes,
+     architecture_hardening, pipeline_guardrails) must be ONE concise
+     sentence.
+   These brevity limits NEVER apply to refactored_code.full_source,
+   which stays complete and unabridged per rule 4.
+6. Every key must always be present; use empty lists when there is
    nothing to report.
 """
 

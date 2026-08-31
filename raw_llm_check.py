@@ -3,7 +3,7 @@ import json
 import time
 
 payload = {
-    "model": "deepseek-v4-flash",
+    "model": "glm-5.3-flash-free",
     "messages": [{"role": "user", "content": "Say hello in one word."}],
     "temperature": 0
 }

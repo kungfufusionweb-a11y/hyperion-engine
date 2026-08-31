@@ -231,7 +231,7 @@ def test_invalid_json_triggers_fallback(monkeypatch, caplog):
 
 def test_timeout_triggers_fallback(monkeypatch, caplog):
     with caplog.at_level(logging.WARNING, logger="hyperion.ai_llm"):
-        result = _analyze(monkeypatch, exc=TimeoutError("simulated 25s timeout"))
+        result = _analyze(monkeypatch, exc=TimeoutError("simulated 60s timeout"))
     _assert_fallback_holds(result, caplog)
     assert "timeout" in caplog.text
 
@@ -304,6 +304,8 @@ def test_prompt_is_single_batched_message_with_all_context(monkeypatch):
     assert "narrative and educational ONLY" in system_prompt
     assert "runnable exploit code" in system_prompt
     assert "COMPLETE corrected file" in system_prompt
+    assert "ONE concise sentence" in system_prompt
+    assert "AT MOST 5 steps" in system_prompt
     # User prompt: one batched message with all three inputs.
     assert "STATIC SCANNER FINDINGS" in user_prompt
     assert "DEPENDENCY VULNERABILITY FINDINGS" in user_prompt
