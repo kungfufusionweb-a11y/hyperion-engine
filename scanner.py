@@ -13,6 +13,11 @@ _SECRET_NAME_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+_ENV_VAR_NAME_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]+$")
+_TEST_MARKER_PATTERN = re.compile(
+    r"(?i)(not-real|not_real|fake|dummy|example|placeholder|xxx-xxx)"
+)
+
 _SQL_SINK_NAMES = {"execute", "executemany", "raw"}
 
 _DANGEROUS_BUILTINS = {"eval", "exec"}
@@ -86,6 +91,21 @@ class _VulnerabilityVisitor(ast.NodeVisitor):
             return
         if isinstance(target, ast.Name):
             if _SECRET_NAME_PATTERN.search(target.id):
+                if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                    value_str = value.value
+                    if _ENV_VAR_NAME_PATTERN.fullmatch(value_str) and len(value_str) >= 8:
+                        return  # Exclude entirely: looks like an env-var name
+                    if _TEST_MARKER_PATTERN.search(value_str):
+                        self.findings.append(
+                            _make_finding(
+                                self.filename,
+                                node,
+                                "hardcoded_secret",
+                                "low",
+                                self._snippet(node.lineno),
+                            )
+                        )
+                        return  # Downgraded to low; skip normal high-confidence
                 self.findings.append(
                     _make_finding(
                         self.filename,
@@ -98,6 +118,21 @@ class _VulnerabilityVisitor(ast.NodeVisitor):
         elif isinstance(target, ast.Tuple):
             for elt in target.elts:
                 if isinstance(elt, ast.Name) and _SECRET_NAME_PATTERN.search(elt.id):
+                    if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                        value_str = value.value
+                        if _ENV_VAR_NAME_PATTERN.fullmatch(value_str) and len(value_str) >= 8:
+                            continue  # Exclude this element entirely
+                        if _TEST_MARKER_PATTERN.search(value_str):
+                            self.findings.append(
+                                _make_finding(
+                                    self.filename,
+                                    node,
+                                    "hardcoded_secret",
+                                    "low",
+                                    self._snippet(node.lineno),
+                                )
+                            )
+                            continue  # Downgraded to low; skip normal high-confidence
                     self.findings.append(
                         _make_finding(
                             self.filename,
@@ -133,6 +168,21 @@ class _VulnerabilityVisitor(ast.NodeVisitor):
                 arg = args.args[idx]
                 if _is_literal_string(default) and default.value:
                     if _SECRET_NAME_PATTERN.search(arg.arg):
+                        if isinstance(default, ast.Constant) and isinstance(default.value, str):
+                            value_str = default.value
+                            if _ENV_VAR_NAME_PATTERN.fullmatch(value_str) and len(value_str) >= 8:
+                                continue  # Exclude this default entirely
+                            if _TEST_MARKER_PATTERN.search(value_str):
+                                self.findings.append(
+                                    _make_finding(
+                                        self.filename,
+                                        default,
+                                        "hardcoded_secret",
+                                        "low",
+                                        self._snippet(default.lineno),
+                                    )
+                                )
+                                continue  # Downgraded to low; skip normal high-confidence
                         self.findings.append(
                             _make_finding(
                                 self.filename,
@@ -148,6 +198,21 @@ class _VulnerabilityVisitor(ast.NodeVisitor):
         for kw_default, arg in zip(node.args.kw_defaults, node.args.kwonlyargs):
             if kw_default and _is_literal_string(kw_default) and kw_default.value:
                 if _SECRET_NAME_PATTERN.search(arg.arg):
+                    if isinstance(kw_default, ast.Constant) and isinstance(kw_default.value, str):
+                        value_str = kw_default.value
+                        if _ENV_VAR_NAME_PATTERN.fullmatch(value_str) and len(value_str) >= 8:
+                            continue  # Exclude this keyword default entirely
+                        if _TEST_MARKER_PATTERN.search(value_str):
+                            self.findings.append(
+                                _make_finding(
+                                    self.filename,
+                                    kw_default,
+                                    "hardcoded_secret",
+                                    "low",
+                                    self._snippet(kw_default.lineno),
+                                )
+                            )
+                            continue  # Downgraded to low; skip normal high-confidence
                     self.findings.append(
                         _make_finding(
                             self.filename,

@@ -22,6 +22,29 @@ def test_hardcoded_secret_function_default():
     assert matches[0]["line_number"] == 1
 
 
+def test_env_var_name_not_flagged():
+    code = '_ENV_API_KEY = "HYPERION_LLM_API_KEY"\n'
+    findings = scan_source(code)
+    matches = [f for f in findings if f["pattern_type"] == "hardcoded_secret"]
+    assert len(matches) == 0
+
+
+def test_test_marker_confidence_low():
+    code = 'API_KEY = "test-api-key-not-real"\n'
+    findings = scan_source(code)
+    matches = [f for f in findings if f["pattern_type"] == "hardcoded_secret"]
+    assert len(matches) == 1
+    assert matches[0]["confidence"] == "low"
+
+
+def test_real_secret_still_high_confidence():
+    code = 'API_KEY = "sk-live-abc123xyz789"\n'
+    findings = scan_source(code)
+    matches = [f for f in findings if f["pattern_type"] == "hardcoded_secret"]
+    assert len(matches) == 1
+    assert matches[0]["confidence"] == "high"
+
+
 def test_sql_injection_fstring_in_execute():
     code = (
         "def get_user(conn, user_id):\n"
