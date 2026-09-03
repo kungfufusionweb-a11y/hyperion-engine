@@ -23,6 +23,7 @@ from scanner import scan_source
 from dependency_check import check_dependencies
 from repo_scanner import scan_repository
 from ai_llm import get_analysis
+import demo_cache
 
 
 # ---------------------------------------------------------------------------
@@ -1039,11 +1040,15 @@ def render_input_panel():
         )
 
     _md('<div style="height: 0.4rem"></div>')
-    scan_clicked = st.button("Scan", type="primary", width="stretch")
+    btn_col1, btn_col2 = st.columns([3, 1])
+    with btn_col1:
+        scan_clicked = st.button("Scan", type="primary", width="stretch")
+    with btn_col2:
+        load_demo_clicked = st.button("Load Demo", type="secondary", width="stretch")
 
     _md('</div>')
 
-    return mode, code, filename, repo_url, scan_clicked
+    return mode, code, filename, repo_url, scan_clicked, load_demo_clicked
 
 
 # ---------------------------------------------------------------------------
@@ -1441,7 +1446,17 @@ def main():
         </div>
         ''')
 
-    mode, code, filename, repo_url, scan_clicked = render_input_panel()
+    mode, code, filename, repo_url, scan_clicked, load_demo_clicked = render_input_panel()
+
+    if load_demo_clicked:
+        cached = demo_cache.load_cache("demo_snippet")
+        if cached:
+            st.session_state["scan_results"] = cached
+            st.success("Demo loaded from cache.")
+            st.rerun()
+        else:
+            st.warning("No demo cache found. Run cache_demo_scan.py first.")
+            st.stop()
 
     if scan_clicked:
         if mode == "Paste code snippet" and not code:
