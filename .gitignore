@@ -19,3 +19,4 @@ dev-tools/
 graphify-out/
 .agents/
 .claude/
+.demo_cache/
