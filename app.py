@@ -6,6 +6,7 @@ visual polish. Confirms the full pipeline runs end-to-end.
 """
 
 import os
+import difflib
 import time
 from pathlib import Path
 from collections import Counter
@@ -1262,6 +1263,72 @@ def render_threat_modeling_tab():
 
 
 # ---------------------------------------------------------------------------
+# Code Refactoring tab
+# ---------------------------------------------------------------------------
+
+def render_code_refactoring_tab():
+    """Render the Code Refactoring tab: side-by-side diff + download."""
+    if "scan_results" not in st.session_state:
+        _md('<div class="empty-state">Run a scan to generate refactored code.</div>')
+        return
+
+    results = st.session_state["scan_results"]
+    analysis = results.get("analysis")
+
+    if not isinstance(analysis, dict):
+        _md(
+            '<div class="empty-state">Code refactoring is available in snippet/upload mode.</div>')
+        return
+
+    refactored = analysis.get("refactored_code") or {}
+    full_source = refactored.get("full_source", "")
+    filename = refactored.get("file") or "refactored.py"
+
+    if not full_source:
+        _md(_empty_panel("CODE REFACTORING", "No refactored code available."))
+        return
+
+    original_source = results.get("source_code", "") or ""
+
+    original_lines = original_source.splitlines(keepends=True)
+    refactored_lines = full_source.splitlines(keepends=True)
+    diff_lines = list(difflib.unified_diff(
+        original_lines, refactored_lines,
+        fromfile="original", tofile="refactored", lineterm="",
+    ))
+
+    added = sum(1 for ln in diff_lines if ln.startswith("+") and not ln.startswith("+++"))
+    removed = sum(1 for ln in diff_lines if ln.startswith("-") and not ln.startswith("---"))
+    unchanged = max(0, len(original_lines) - removed)
+
+    _md(
+        f'<div class="hyperion-panel">'
+        f'<div class="panel-title">CODE REFACTORING</div>'
+        f'<div class="panel-note">'
+        f'<span style="color:var(--low);">+{added} added</span> &nbsp; '
+        f'<span style="color:var(--critical);">-{removed} removed</span> &nbsp; '
+        f'<span style="color:var(--text-muted);">{unchanged} unchanged</span>'
+        f'</div></div>'
+    )
+    _md('<div style="height: 0.4rem"></div>')
+
+    left_col, right_col = st.columns(2)
+    with left_col:
+        st.code(original_source, language="python")
+    with right_col:
+        st.code(full_source, language="python")
+
+    _md('<div style="height: 0.4rem"></div>')
+
+    st.download_button(
+        label=f"Download {filename}",
+        data=full_source.encode("utf-8"),
+        file_name=filename,
+        mime="text/plain",
+    )
+
+
+# ---------------------------------------------------------------------------
 # Placeholder tabs
 # ---------------------------------------------------------------------------
 
@@ -1346,6 +1413,7 @@ def main():
                             "scan_findings": scan_findings,
                             "dep_findings": dep_findings,
                             "analysis": analysis,
+                            "source_code": source_code,
                         }
 
                     elif mode == "GitHub repo URL":
@@ -1396,7 +1464,7 @@ def main():
         render_coming_soon_tab("Recommendations & Hardening")
 
     with tab4:
-        render_coming_soon_tab("Code Refactoring")
+        render_code_refactoring_tab()
 
     with tab5:
         render_coming_soon_tab("Export Report")
