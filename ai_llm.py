@@ -15,10 +15,12 @@ import json
 import logging
 import os
 import socket
+import time
 import urllib.error
 import urllib.request
 from typing import Any
 
+import cve_reference
 import ai_fallback
 from schema_validator import validate_schema
 
@@ -97,6 +99,12 @@ OUTPUT CONTRACT — obey exactly:
 6. Every key must always be present; use empty lists when there is
    nothing to report.
 """
+_CVE_REFERENCE_SECTION = (
+    "\nREFERENCE EXAMPLES (for OWASP category and CVSS calibration only — "
+    "not exhaustive; do not assume every finding matches these):\n"
+    + cve_reference.format_examples_for_prompt()
+)
+_SYSTEM_PROMPT = _SYSTEM_PROMPT + _CVE_REFERENCE_SECTION
 
 
 def _build_user_prompt(
@@ -188,9 +196,10 @@ def _fallback(
     dep_findings: list[dict],
     source_code: str,
     reason: str,
+    elapsed: float,
 ) -> dict:
     """Log the fallback reason and return the deterministic analysis."""
-    logger.warning("fallback_triggered: %s", reason)
+    logger.warning("fallback_triggered: %s (after %.2fs)", reason, elapsed)
     result = ai_fallback.generate_fallback_analysis(scan_findings, dep_findings, source_code)
     ok, why = validate_schema(result)
     if ok:
@@ -209,43 +218,60 @@ def _analyze_impl(
     source_code: str,
     api_key: str | None,
 ) -> dict:
+    started_at = time.perf_counter()
     resolved_key = api_key or os.environ.get(_ENV_API_KEY, "")
     if not resolved_key:
-        return _fallback(scan_findings, dep_findings, source_code, "no_api_key")
+        return _fallback(
+            scan_findings, dep_findings, source_code,
+            "no_api_key", time.perf_counter() - started_at,
+        )
 
     user_prompt = _build_user_prompt(scan_findings, dep_findings, source_code)
 
     try:
         raw_response = _call_llm_api(_SYSTEM_PROMPT, user_prompt, resolved_key)
     except (TimeoutError, socket.timeout) as exc:
-        return _fallback(scan_findings, dep_findings, source_code, f"timeout: {exc}")
+        return _fallback(
+            scan_findings, dep_findings, source_code,
+            f"timeout: {exc}", time.perf_counter() - started_at,
+        )
     except urllib.error.URLError as exc:
-        return _fallback(scan_findings, dep_findings, source_code, f"network_error: {exc}")
+        return _fallback(
+            scan_findings, dep_findings, source_code,
+            f"network_error: {exc}", time.perf_counter() - started_at,
+        )
     except Exception as exc:
         return _fallback(
             scan_findings, dep_findings, source_code,
             f"api_error: {type(exc).__name__}: {exc}",
+            time.perf_counter() - started_at,
         )
 
     if not isinstance(raw_response, str) or not raw_response.strip():
         return _fallback(
             scan_findings, dep_findings, source_code,
             "invalid_json: empty or non-string API response",
+            time.perf_counter() - started_at,
         )
 
     try:
         parsed = json.loads(_strip_code_fences(raw_response))
     except Exception as exc:
-        return _fallback(scan_findings, dep_findings, source_code, f"invalid_json: {exc}")
+        return _fallback(
+            scan_findings, dep_findings, source_code,
+            f"invalid_json: {exc}", time.perf_counter() - started_at,
+        )
 
     ok, reason = validate_schema(parsed)
     if not ok:
         return _fallback(
             scan_findings, dep_findings, source_code,
             f"schema_validation_failed: {reason}",
+            time.perf_counter() - started_at,
         )
 
-    logger.warning("llm_success")
+    elapsed = time.perf_counter() - started_at
+    logger.warning("llm_success in %.2fs", elapsed)
     return parsed
 
 
@@ -262,12 +288,14 @@ def analyze_with_llm(
     failure mode returns ai_fallback.generate_fallback_analysis(...).
     Never raises; never returns a dict that failed validate_schema().
     """
+    started_at = time.perf_counter()
     try:
         return _analyze_impl(scan_findings, dep_findings, source_code, api_key)
     except Exception as exc:  # absolute guarantee: this function never raises
         return _fallback(
             scan_findings, dep_findings, source_code,
             f"unexpected_error: {type(exc).__name__}: {exc}",
+            time.perf_counter() - started_at,
         )
 
 

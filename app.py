@@ -7,6 +7,7 @@ visual polish. Confirms the full pipeline runs end-to-end.
 
 import os
 import tempfile
+import time
 from pathlib import Path
 
 import streamlit as st
@@ -105,7 +106,13 @@ def main():
 
                 if mode in ["Paste code snippet", "Upload file"]:
                     # AST-based source code scan
+                    scan_started_at = time.perf_counter()
                     scan_findings = scan_source(code or "", filename=filename)
+                    print(
+                        f"[Hyperion] Scan completed in "
+                        f"{time.perf_counter() - scan_started_at:.2f}s "
+                        f"({len(scan_findings)} findings)"
+                    )
 
                     # Dependency scan (if requirements.txt uploaded)
                     if req_file is not None:
@@ -119,7 +126,12 @@ def main():
                             temp_file.close()  # Important: close before passing to check_dependencies()
                             
                             # Now pass the path to check_dependencies
+                            dependency_started_at = time.perf_counter()
                             dep_findings = check_dependencies(temp_path)
+                            print(
+                                f"[Hyperion] Dependency check completed in "
+                                f"{time.perf_counter() - dependency_started_at:.2f}s"
+                            )
                         finally:
                             if temp_file and not temp_file.closed:
                                 temp_file.close()
@@ -131,10 +143,15 @@ def main():
 
                     # Get AI analysis (or fallback) for single-file scans only
                     source_code = code or ""
+                    analysis_started_at = time.perf_counter()
                     analysis = get_analysis(
                         scan_findings=scan_findings,
                         dep_findings=dep_findings,
                         source_code=source_code,
+                    )
+                    print(
+                        f"[Hyperion] AI analysis completed in "
+                        f"{time.perf_counter() - analysis_started_at:.2f}s"
                     )
 
                     # Build final result
@@ -146,7 +163,13 @@ def main():
 
                 elif mode == "GitHub repo URL":
                     # Full repository scan - no AI analysis for whole repos yet
+                    repo_scan_started_at = time.perf_counter()
                     result = scan_repository(repo_url)
+                    print(
+                        f"[Hyperion] Repo scan completed in "
+                        f"{time.perf_counter() - repo_scan_started_at:.2f}s "
+                        f"({result['files_scanned']} files scanned)"
+                    )
                     scan_findings = result["scan_findings"]
                     dep_findings = result["dep_findings"]
                     

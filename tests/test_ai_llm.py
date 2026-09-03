@@ -8,6 +8,7 @@ import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
+import cve_reference
 import ai_llm
 from ai_fallback import generate_fallback_analysis
 from schema_validator import validate_schema
@@ -306,6 +307,8 @@ def test_prompt_is_single_batched_message_with_all_context(monkeypatch):
     assert "COMPLETE corrected file" in system_prompt
     assert "ONE concise sentence" in system_prompt
     assert "AT MOST 5 steps" in system_prompt
+    cve_ids = [entry["cve_id"] for entry in cve_reference.CVE_REFERENCE_EXAMPLES]
+    assert any(cve_id in system_prompt for cve_id in cve_ids)
     # User prompt: one batched message with all three inputs.
     assert "STATIC SCANNER FINDINGS" in user_prompt
     assert "DEPENDENCY VULNERABILITY FINDINGS" in user_prompt
