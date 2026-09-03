@@ -4,12 +4,10 @@ Sits alongside ai_fallback.py: attempts a real LLM analysis built from the
 scanner findings, dependency findings, and the full source file in ONE
 batched prompt. The model's answer must pass schema_validator.validate_schema()
 before it is returned. On ANY failure — missing API key, invalid JSON, schema
-violation, 60-second timeout, or network/API error — this module falls back to
+violation, 30-second timeout, or network/API error — this module falls back to
 ai_fallback.generate_fallback_analysis(). It never raises and never returns
 a dict that has not passed validate_schema().
 """
-
-from __future__ import annotations
 
 import json
 import logging
@@ -35,8 +33,11 @@ logger = logging.getLogger("hyperion.ai_llm")
 # changes. No third-party HTTP dependency: stdlib urllib only.
 # Measured baseline: this schema's typical output (~1500 tokens) takes
 # ~46s on the current provider/model (3 runs: 46.2s, 46.2s, 46.4s).
-# 60s gives headroom over that baseline without inviting indefinite hangs.
-_API_TIMEOUT_SECONDS = 60
+# 30s is tight but reasonable: prior real-world samples (32s, 45.9s, 47.2s)
+# all succeeded, so 30s will fail genuinely slow/hung requests into the
+# fallback rather than letting a demo hang. Increase if the provider baseline
+# shifts.
+_API_TIMEOUT_SECONDS = 30
 _ENV_API_KEY = "HYPERION_LLM_API_KEY"
 _ENV_API_URL = "HYPERION_LLM_API_URL"
 _ENV_MODEL = "HYPERION_LLM_MODEL"
@@ -169,9 +170,29 @@ def _call_llm_api(system_prompt: str, user_prompt: str, api_key: str) -> str:
         },
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=_API_TIMEOUT_SECONDS) as response:
-        raw_body = response.read().decode("utf-8")
-    body = json.loads(raw_body)
+    logger.info(
+        "llm_api_call starting (timeout=%ds, url=%s)",
+        _API_TIMEOUT_SECONDS,
+        os.environ.get(_ENV_API_URL, _DEFAULT_API_URL),
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=_API_TIMEOUT_SECONDS) as response:
+            raw_body = response.read().decode("utf-8")
+    except (TimeoutError, socket.timeout):
+        logger.info("llm_api_call timed out after %ds", _API_TIMEOUT_SECONDS)
+        raise
+    try:
+        body = json.loads(raw_body)
+    except Exception as exc:
+        raise ValueError(
+            f"invalid_json: could not parse API response body: {exc}; "
+            f"body[:200]={raw_body[:200]!r}"
+        ) from exc
+    if "choices" not in body:
+        raise ValueError(
+            f"unexpected_response_shape: 'choices' key missing from API response; "
+            f"body[:200]={raw_body[:200]!r}"
+        )
     return body["choices"][0]["message"]["content"]
 
 
