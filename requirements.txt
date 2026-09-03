@@ -1,2 +1,21 @@
-pyyaml==5.3
-flask==0.12
+# Hyperion Security Engine - runtime + dev dependencies
+# Versions pinned with >= (permissive, allows patch/minor updates)
+
+# --- Runtime (required to run app.py) ---
+streamlit>=1.63.0
+plotly>=7.0.0
+pandas>=3.0.5
+python-dotenv>=1.2.3
+PyYAML>=6.0.3
+graphviz>=0.21
+
+# --- Test dependencies (required to run pytest) ---
+pytest>=9.1.1
+
+# --- DevSecOps / code quality (per project theme) ---
+black>=26.5.1
+flake8>=7.3.0
+bandit>=1.9.4
+
+# --- Optional: coverage reporting (commonly paired with pytest) ---
+pytest-cov>=7.1.0
