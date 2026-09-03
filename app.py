@@ -1525,10 +1525,18 @@ def main():
                         scan_findings = result["scan_findings"]
                         dep_findings = result["dep_findings"]
 
+                        from ai_fallback import generate_fallback_analysis
+                        repo_analysis = generate_fallback_analysis(
+                            scan_findings=scan_findings,
+                            dep_findings=dep_findings,
+                            source_code="",
+                        )
+
                         output = {
                             "scan_findings": scan_findings,
                             "dep_findings": dep_findings,
                             "files_scanned": result["files_scanned"],
+                            "analysis": repo_analysis,
                         }
 
                         if result["error"]:
