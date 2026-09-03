@@ -19,3 +19,8 @@ bandit>=1.9.4
 
 # --- Optional: coverage reporting (commonly paired with pytest) ---
 pytest-cov>=7.1.0
+
+# --- Demo: pinned old versions to demonstrate CVE detection ---
+# These are intentionally outdated to show dependency scanning works.
+pyyaml==5.3
+flask==2.2.0
