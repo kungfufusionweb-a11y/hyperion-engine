@@ -939,7 +939,7 @@ def render_attack_path(attack_steps):
     for idx, step in enumerate(attack_steps, start=1):
         if isinstance(step, dict):
             num = step.get("step", idx)
-            text = step.get("description", str(step))
+            text = step.get("narrative", step.get("description", str(step)))
         else:
             num = idx
             text = str(step)
