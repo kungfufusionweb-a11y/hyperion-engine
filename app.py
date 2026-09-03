@@ -733,6 +733,33 @@ def inject_custom_css():
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* Recommendation rows */
+        .rec-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-top: 0.3rem;
+        }
+        .rec-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            line-height: 1.45;
+        }
+        .rec-bullet {
+            flex: 0 0 6px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-top: 0.5rem;
+            opacity: 0.9;
+        }
+        .rec-text {
+            flex: 1;
+        }
         </style>
         """)
 
@@ -1263,6 +1290,62 @@ def render_threat_modeling_tab():
 
 
 # ---------------------------------------------------------------------------
+# Recommendations & Hardening tab
+# ---------------------------------------------------------------------------
+
+def render_recommendations_tab():
+    """Render the Recommendations & Hardening tab as three grouped panels."""
+    if "scan_results" not in st.session_state:
+        _md(
+            '<div class="empty-state">Run a scan to generate recommendations and hardening guidance.</div>')
+        return
+
+    results = st.session_state["scan_results"]
+    analysis = results.get("analysis")
+
+    if not isinstance(analysis, dict):
+        _md(
+            '<div class="empty-state">Recommendations are available in snippet/upload mode.</div>')
+        return
+
+    recommendations = analysis.get("recommendations")
+    if not isinstance(recommendations, dict):
+        _md(_empty_panel("RECOMMENDATIONS", "Recommendations not available."))
+        return
+
+    groups = [
+        ("IMMEDIATE FIXES", "immediate_fixes", "var(--critical)", "01 //"),
+        ("ARCHITECTURE HARDENING", "architecture_hardening", "var(--high)", "02 //"),
+        ("PIPELINE GUARDRAILS", "pipeline_guardrails", "var(--accent)", "03 //"),
+    ]
+
+    for title, key, color, prefix in groups:
+        items = recommendations.get(key) or []
+        html = '<div class="hyperion-panel">'
+        html += (
+            f'<div class="panel-title">'
+            f'<span style="color:{color};">{prefix}</span> &nbsp;{title}'
+            f'</div>'
+        )
+        if items:
+            html += '<div class="rec-list">'
+            for item in items:
+                text = str(item).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                html += (
+                    f'<div class="rec-item">'
+                    f'<span class="rec-bullet" style="background-color:{color};"></span>'
+                    f'<span class="rec-text">{text}</span>'
+                    f'</div>'
+                )
+            html += '</div>'
+        else:
+            html += '<div class="panel-note">None identified.</div>'
+        html += '</div>'
+        _md(html)
+        _md('<div style="height: 0.4rem"></div>')
+
+
+# ---------------------------------------------------------------------------
 # Code Refactoring tab
 # ---------------------------------------------------------------------------
 
@@ -1461,7 +1544,7 @@ def main():
         render_threat_modeling_tab()
 
     with tab3:
-        render_coming_soon_tab("Recommendations & Hardening")
+        render_recommendations_tab()
 
     with tab4:
         render_code_refactoring_tab()
