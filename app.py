@@ -638,6 +638,35 @@ def inject_custom_css():
         [data-testid="stFileUploaderDropzoneInstructions"] > span:first-child {
             display: none !important;
         }
+
+        /* Fix: "uploadUpload" text overlap on the browse button.
+           Streamlit renders both a native button label and an inner span
+           simultaneously. We hide all inner text nodes and inject one clean
+           label via ::before so only a single "Browse files" label shows. */
+        [data-testid="stFileUploaderDropzone"] button[kind="secondary"] {
+            color: transparent !important;
+            position: relative !important;
+            min-width: 120px !important;
+            font-size: 0 !important;
+        }
+        [data-testid="stFileUploaderDropzone"] button[kind="secondary"] * {
+            color: transparent !important;
+            font-size: 0 !important;
+        }
+        [data-testid="stFileUploaderDropzone"] button[kind="secondary"]::before {
+            content: "Browse files" !important;
+            color: var(--text-primary) !important;
+            font-family: 'Space Grotesk', sans-serif !important;
+            font-size: 0.85rem !important;
+            font-weight: 500 !important;
+            position: absolute !important;
+            left: 50% !important;
+            top: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            white-space: nowrap !important;
+        }
+
+
         [data-testid="stFileUploaderFile"] {
             background-color: var(--panel) !important;
             border: 1px solid var(--border) !important;
@@ -907,12 +936,12 @@ def render_attack_path(attack_steps):
         return f'<div class="attack-step-text">{attack_steps}</div>'
 
     items_html = ""
-    for step in attack_steps:
+    for idx, step in enumerate(attack_steps, start=1):
         if isinstance(step, dict):
-            num = step.get("step", "?")
-            text = step.get("narrative", "")
+            num = step.get("step", idx)
+            text = step.get("description", str(step))
         else:
-            num = "?"
+            num = idx
             text = str(step)
         items_html += f'''
         <div class="attack-step">
