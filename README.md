@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hyperion_github_logo.png" height="120" alt="Hyperion Security Engine">
+  <img src="assets/hyperion_github_logo.png" height="200" alt="Hyperion Security Engine">
 </p>
 
 <h1 align="center">Hyperion Security Engine</h1>
@@ -24,6 +24,7 @@
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
+- [Screenshots](#screenshots)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
@@ -114,6 +115,29 @@ The pipeline runs end-to-end inside the Streamlit app: input is dispatched to th
 
 ---
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="assets/screenshots/Health.png" alt="Dashboard" width="100%"></td>
+    <td><img src="assets/screenshots/Scan%20findings.png" alt="Scan Findings" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/Dependency%20fings.png" alt="Dependency Findings" width="100%"></td>
+    <td><img src="assets/screenshots/OWASP%20categories.png" alt="OWASP Categories" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/Threat%20Modelling%20%26%20Attack%20Paths.png" alt="Threat Modeling" width="100%"></td>
+    <td><img src="assets/screenshots/Recommendations%20%26%20Hardening.png" alt="Recommendations" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/Code%20Refactor.png" alt="Code Refactoring" width="100%"></td>
+    <td></td>
+  </tr>
+</table>
+
+---
+
 ## Installation
 
 ### Prerequisites
@@ -176,7 +200,12 @@ Hyperion supports three input modes plus an offline demo mode.
 
 Paste Python code into the editor and click **Scan**. Useful for quick analysis of single files or functions.
 
-<!-- screenshot -->
+<p align="center">
+  <img src="assets/screenshots/Health.png" width="80%" alt="Health Score Dashboard">
+  <img src="assets/screenshots/Scan%20findings.png" width="80%" alt="Scan Findings">
+  <img src="assets/screenshots/Dependency%20fings.png" width="80%" alt="Dependency Findings">
+  <img src="assets/screenshots/OWASP%20categories.png" width="80%" alt="OWASP Categories">
+</p>
 
 ### Upload File
 
