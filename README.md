@@ -258,30 +258,38 @@ Click **Load Demo** to instantly populate the UI from a cached scan result. Usef
 
 ```
 hyperion-engine/
-├── app.py                       # Streamlit UI (all tabs, charts, export)
-├── scanner.py                   # AST-based pattern detection
-├── dependency_check.py          # OSV.dev CVE lookup
-├── repo_scanner.py              # GitHub repo cloning + aggregation
-├── ai_llm.py                    # LLM client (urllib-based, schema-validated)
-├── ai_fallback.py               # Deterministic local analysis
-├── schema_validator.py          # JSON contract enforcement
-├── cve_reference.py             # Curated CVE examples for prompt grounding
-├── demo_cache.py                # Local JSON cache for offline demo mode
-├── requirements.txt             # Runtime + test dependencies
+├── app.py                        # Streamlit UI (all tabs, charts, export)
+├── scanner.py                    # AST-based pattern detection
+├── dependency_check.py           # OSV.dev CVE lookup
+├── repo_scanner.py               # GitHub repo cloning + aggregation
+├── ai_llm.py                     # LLM client (urllib-based, schema-validated)
+├── ai_fallback.py                # Deterministic local analysis
+├── schema_validator.py           # JSON contract enforcement
+├── cve_reference.py              # Curated CVE examples for prompt grounding
+├── demo_cache.py                 # Local JSON cache for offline demo mode
+├── run_tests.py                  # Test runner helper
+├── pytest.ini                    # Pytest configuration
+├── requirements.txt              # Runtime + dev dependencies
+├── test_requirements.txt         # Test fixture dependencies
+├── .env.example                  # Environment variable template
 ├── assets/
-│   └── hyperion_logo.png        # Brand logo (PDF + README)
+│   ├── hyperion_logo.png         # Brand logo (PDF export)
+│   ├── hyperion_github_logo.png  # High-res logo (README)
+│   └── screenshots/              # UI screenshots for documentation
 ├── static/
-│   └── hyperion_logo.png        # UI topbar logo
-├── dev-tools/
-│   └── cache_demo_scan.py       # One-shot demo cache builder
-├── tests/                       # Pytest suite
+│   └── hyperion_logo.png         # UI topbar logo (Streamlit)
+├── tests/
 │   ├── test_scanner.py
 │   ├── test_dependency_check.py
 │   ├── test_repo_scanner.py
 │   ├── test_cve_reference.py
 │   ├── test_ai_fallback.py
 │   ├── test_ai_llm.py
-│   └── test_schema_validator.py
+│   ├── test_schema_validator.py
+│   ├── hardcoded_secret.py       # Vulnerable fixture for testing
+│   ├── os_system_misuse.py       # Vulnerable fixture for testing
+│   ├── pickle_loads.py           # Vulnerable fixture for testing
+│   └── sql_injection.py          # Vulnerable fixture for testing
 └── README.md
 ```
 

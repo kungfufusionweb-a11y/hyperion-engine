@@ -20,3 +20,6 @@ graphify-out/
 .agents/
 .claude/
 .demo_cache/
+some_real_file.py
+pyyaml_only.txt
+AGENTS.md
