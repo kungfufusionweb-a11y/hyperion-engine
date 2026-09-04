@@ -8,6 +8,7 @@ pandas>=3.0.5
 python-dotenv>=1.2.3
 PyYAML>=6.0.3
 graphviz>=0.21
+reportlab>=5.0.1
 
 # --- Test dependencies (required to run pytest) ---
 pytest>=9.1.1

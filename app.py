@@ -6,6 +6,7 @@ visual polish. Confirms the full pipeline runs end-to-end.
 """
 
 import os
+import reportlab
 import difflib
 import time
 from pathlib import Path
@@ -1416,6 +1417,289 @@ def render_code_refactoring_tab():
     )
 
 
+def render_export_tab():
+    """Render the Export Report tab: generate and download a PDF report."""
+    if "scan_results" not in st.session_state or not st.session_state["scan_results"]:
+        _md('<div class="empty-state">Run a scan to generate a PDF report.</div>')
+        return
+
+    results = st.session_state["scan_results"]
+    scan_findings = results.get("scan_findings", []) or []
+    dep_findings = results.get("dep_findings", []) or []
+    analysis = results.get("analysis") or {}
+    files_scanned = results.get("files_scanned", 1)
+    mode = results.get("mode", "Paste code snippet")
+
+    pdf_bytes = _build_pdf_report(
+        scan_findings=scan_findings,
+        dep_findings=dep_findings,
+        analysis=analysis,
+        files_scanned=files_scanned,
+        mode=mode,
+    )
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    st.download_button(
+        label="Download Security Report (PDF)",
+        data=pdf_bytes,
+        file_name=f"hyperion_security_report_{timestamp}.pdf",
+        mime="application/pdf",
+        type="primary",
+        width="stretch",
+    )
+
+
+def _build_pdf_report(
+    scan_findings: list,
+    dep_findings: list,
+    analysis: dict,
+    files_scanned: int,
+    mode: str,
+) -> bytes:
+    """Build a professional PDF report from scan results."""
+    from datetime import datetime
+    from io import BytesIO
+
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import LETTER
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import (
+        Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle,
+    )
+
+    logo_path = ""
+
+    SEVERITY_COLORS = {
+        "Critical": "#E5484D",
+        "High": "#F0883E",
+        "Medium": "#E8C547",
+        "Low": "#6FCF97",
+    }
+    ACCENT = colors.HexColor("#3B82F6")
+    ROW_ALT = colors.HexColor("#F9FAFB")
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "TitleX", parent=styles["Title"], fontName="Helvetica-Bold",
+        fontSize=24, textColor=colors.HexColor("#1F2937"),
+        spaceAfter=4, alignment=1,
+    )
+    subtitle_style = ParagraphStyle(
+        "SubtitleX", parent=styles["Normal"], fontName="Helvetica",
+        fontSize=12, textColor=colors.HexColor("#6B7280"),
+        spaceAfter=18, alignment=1,
+    )
+    section_style = ParagraphStyle(
+        "SectionX", parent=styles["Heading2"], fontName="Helvetica-Bold",
+        fontSize=14, textColor=colors.white, backColor=ACCENT,
+        borderPadding=(4, 6, 4, 6), spaceBefore=10, spaceAfter=8,
+        leftIndent=0,
+    )
+    body_style = styles["Body"]
+    body_style.fontName = "Helvetica"
+    body_style.fontSize = 10
+    body_style.textColor = colors.HexColor("#1F2937")
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=LETTER,
+        leftMargin=0.75 * inch, rightMargin=0.75 * inch,
+        topMargin=0.75 * inch, bottomMargin=0.75 * inch,
+    )
+
+    story = []
+
+    if logo_path:
+        try:
+            story.append(Image(logo_path, width=1.5 * inch, height=1.5 * inch))
+            story.append(Spacer(1, 6))
+        except Exception:
+            pass
+
+    story.append(Paragraph("Hyperion Engine", title_style))
+    story.append(Paragraph("Security Report", subtitle_style))
+
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    health_score = analysis.get("health_score")
+    if isinstance(health_score, (int, float)) and health_score >= 90:
+        health_color = "#6FCF97"
+    elif isinstance(health_score, (int, float)) and health_score >= 70:
+        health_color = "#E8C547"
+    else:
+        health_color = "#E5484D"
+    health_score_str = (
+        f"{int(health_score)}" if isinstance(health_score, (int, float)) else "N/A"
+    )
+
+    overview_data = [
+        ["Generated", generated_at],
+        ["Scan Mode", mode],
+        ["Files Scanned", str(files_scanned)],
+        ["Health Score",
+         f'<font color="{health_color}"><b>{health_score_str}</b></font>'],
+        ["Pattern Findings", str(len(scan_findings))],
+        ["Dependency Issues", str(len(dep_findings))],
+    ]
+    overview_table = Table(
+        [[Paragraph(str(cell), body_style) for cell in row] for row in overview_data],
+        colWidths=[2 * inch, 4.5 * inch],
+    )
+    overview_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (0, -1), ROW_ALT),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#D1D5DB")),
+        ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E5E7EB")),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+
+    story.append(Paragraph("Scan Overview", section_style))
+    story.append(overview_table)
+    story.append(Spacer(1, 14))
+
+    story.append(Paragraph("Vulnerability Findings", section_style))
+    if scan_findings:
+        vuln_rows = [["File", "Line", "Pattern Type", "Severity"]]
+        for finding in scan_findings[:200]:
+            severity = finding.get("severity", "Medium")
+            color = SEVERITY_COLORS.get(severity, "#6B7280")
+            cell_severity = (
+                f'<font color="{color}"><b>{severity}</b></font>'
+            )
+            vuln_rows.append([
+                Paragraph(str(finding.get("file", "")), body_style),
+                str(finding.get("line", "")),
+                Paragraph(str(finding.get("pattern_type", "")), body_style),
+                Paragraph(cell_severity, body_style),
+            ])
+        vuln_table = Table(vuln_rows, colWidths=[2.2 * inch, 0.7 * inch, 2.2 * inch, 1.4 * inch])
+        vuln_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), ACCENT),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 10),
+            ("ALIGN", (0, 0), (-1, 0), "LEFT"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#D1D5DB")),
+            ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E5E7EB")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        story.append(vuln_table)
+        if len(scan_findings) > 200:
+            story.append(Spacer(1, 6))
+            story.append(Paragraph(
+                f"<i>Showing first 200 of {len(scan_findings)} findings.</i>",
+                body_style,
+            ))
+    else:
+        story.append(Paragraph("<i>No pattern findings.</i>", body_style))
+    story.append(Spacer(1, 14))
+
+    story.append(Paragraph("Dependency Vulnerabilities", section_style))
+    if dep_findings:
+        dep_rows = [["Package", "Vulnerability ID", "Severity", "Fixed Version"]]
+        for dep in dep_findings[:200]:
+            severity = dep.get("severity", "Medium")
+            color = SEVERITY_COLORS.get(severity, "#6B7280")
+            fixed_versions = dep.get("fixed_versions") or dep.get("fixed_version") or []
+            if isinstance(fixed_versions, list):
+                fixed_str = ", ".join(fixed_versions) if fixed_versions else "N/A"
+            else:
+                fixed_str = str(fixed_versions)
+            cell_severity = f'<font color="{color}"><b>{severity}</b></font>'
+            dep_rows.append([
+                Paragraph(str(dep.get("package", "")), body_style),
+                Paragraph(str(dep.get("vuln_id", "")), body_style),
+                Paragraph(cell_severity, body_style),
+                Paragraph(fixed_str, body_style),
+            ])
+        dep_table = Table(
+            dep_rows,
+            colWidths=[1.6 * inch, 1.6 * inch, 1.4 * inch, 1.9 * inch],
+        )
+        dep_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), ACCENT),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 10),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#D1D5DB")),
+            ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E5E7EB")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        story.append(dep_table)
+        if len(dep_findings) > 200:
+            story.append(Spacer(1, 6))
+            story.append(Paragraph(
+                f"<i>Showing first 200 of {len(dep_findings)} findings.</i>",
+                body_style,
+            ))
+    else:
+        story.append(Paragraph("<i>No dependency vulnerabilities.</i>", body_style))
+    story.append(Spacer(1, 14))
+
+    story.append(Paragraph("Recommendations", section_style))
+    recommendations = analysis.get("recommendations") or {}
+    subsections = [
+        ("Immediate Fixes", recommendations.get("immediate_fixes") or []),
+        ("Architecture Hardening",
+         recommendations.get("architecture_hardening") or []),
+        ("Pipeline Guardrails",
+         recommendations.get("pipeline_guardrails") or []),
+    ]
+    any_recs = False
+    for sub_title, items in subsections:
+        if items:
+            any_recs = True
+            sub_style = ParagraphStyle(
+                "SubSection", parent=styles["Heading3"],
+                fontName="Helvetica-Bold", fontSize=11,
+                textColor=colors.HexColor("#1F2937"),
+                spaceBefore=6, spaceAfter=4,
+            )
+            story.append(Paragraph(sub_title, sub_style))
+            for item in items:
+                story.append(Paragraph(f"&bull; {item}", body_style))
+    if not any_recs:
+        story.append(Paragraph("<i>No recommendations available.</i>", body_style))
+    story.append(Spacer(1, 14))
+
+    story.append(Paragraph("Attack Path Analysis", section_style))
+    attack_steps = analysis.get("attack_path_poc") or []
+    if attack_steps:
+        for i, step in enumerate(attack_steps, 1):
+            story.append(Paragraph(f"<b>Step {i}.</b> {step}", body_style))
+            story.append(Spacer(1, 3))
+    else:
+        story.append(Paragraph("<i>No attack path generated.</i>", body_style))
+
+    doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
+    return buffer.getvalue()
+
+
+def _footer(canvas, doc):
+    """Draw footer with branding and page number."""
+    canvas.saveState()
+    canvas.setFont("Helvetica", 8)
+    canvas.setFillColor(colors.HexColor("#6B7280"))
+    canvas.drawString(0.75 * inch, 0.4 * inch, "Hyperion Security Engine")
+    canvas.drawRightString(
+        7.75 * inch, 0.4 * inch, f"Page {doc.page}",
+    )
+    canvas.restoreState()
+
+
 # ---------------------------------------------------------------------------
 # Placeholder tabs
 # ---------------------------------------------------------------------------
@@ -1573,7 +1857,7 @@ def main():
         render_code_refactoring_tab()
 
     with tab5:
-        render_coming_soon_tab("Export Report")
+        render_export_tab()
 
 
 if __name__ == "__main__":
