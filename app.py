@@ -1690,9 +1690,11 @@ def _build_pdf_report(
 
 def _footer(canvas, doc):
     """Draw footer with branding and page number."""
+    from reportlab.lib import colors as rl_colors
+    from reportlab.lib.units import inch
     canvas.saveState()
     canvas.setFont("Helvetica", 8)
-    canvas.setFillColor(colors.HexColor("#6B7280"))
+    canvas.setFillColor(rl_colors.HexColor("#6B7280"))
     canvas.drawString(0.75 * inch, 0.4 * inch, "Hyperion Security Engine")
     canvas.drawRightString(
         7.75 * inch, 0.4 * inch, f"Page {doc.page}",
