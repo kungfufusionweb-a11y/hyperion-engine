@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hyperion_logo.png" height="120" alt="Hyperion Security Engine">
+  <img src="assets/hyperion_github_logo.png" height="120" alt="Hyperion Security Engine">
 </p>
 
 <h1 align="center">Hyperion Security Engine</h1>
