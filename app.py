@@ -1470,7 +1470,9 @@ def _build_pdf_report(
         Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle,
     )
 
-    logo_path = ""
+    logo_path = os.path.join(
+        os.path.dirname(__file__), "assets", "hyperion_logo.png"
+    )
 
     SEVERITY_COLORS = {
         "Critical": "#E5484D",
@@ -1519,7 +1521,7 @@ def _build_pdf_report(
 
     if logo_path:
         try:
-            story.append(Image(logo_path, width=1.5 * inch, height=1.5 * inch))
+            story.append(Image(logo_path, width=3.5 * inch, height=1.17 * inch))
             story.append(Spacer(1, 6))
         except Exception:
             pass
@@ -1745,14 +1747,31 @@ def main():
 
     inject_custom_css()
 
+    import base64
+    _logo_path = os.path.join(os.path.dirname(__file__),
+                              "static", "hyperion_logo.png")
+    _logo_b64 = ""
+    if os.path.isfile(_logo_path):
+        with open(_logo_path, "rb") as _f:
+            _logo_b64 = base64.b64encode(_f.read()).decode()
+
+    _logo_html = (
+        f'<img src="data:image/png;base64,{_logo_b64}" '
+        f'height="48" style="vertical-align:middle; margin-right:1rem;">'
+        if _logo_b64 else
+        '<span class="hyperion-brand-mark">H//</span>'
+        '<span class="hyperion-brand-name">Hyperion Security Engine</span>'
+    )
+
     _md(
-        '''
+        f'''
         <div class="hyperion-topbar">
             <div class="hyperion-brand">
-                <span class="hyperion-brand-mark">H//</span>
-                <span class="hyperion-brand-name">Hyperion Security Engine</span>
+                {_logo_html}
             </div>
-            <span class="hyperion-brand-tag">Static analysis · Threat modeling · AI remediation</span>
+            <span class="hyperion-brand-tag" style="margin-left:auto;">
+                Static analysis · Threat modeling · AI remediation
+            </span>
         </div>
         ''')
 
