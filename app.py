@@ -1478,18 +1478,23 @@ def _build_pdf_report(
         "Medium": "#E8C547",
         "Low": "#6FCF97",
     }
-    ACCENT = colors.HexColor("#3B82F6")
-    ROW_ALT = colors.HexColor("#F9FAFB")
+    BG = colors.HexColor("#12141A")
+    PANEL = colors.HexColor("#1B1E27")
+    ROW_ALT = colors.HexColor("#2C2F3A")
+    TEXT_PRIMARY = colors.HexColor("#E4E6EB")
+    TEXT_MUTED = colors.HexColor("#8B8FA3")
+    ACCENT = colors.HexColor("#E8724C")
+    DIVIDER = colors.HexColor("#3A3E4A")
 
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         "TitleX", parent=styles["Title"], fontName="Helvetica-Bold",
-        fontSize=24, textColor=colors.HexColor("#1F2937"),
+        fontSize=24, textColor=TEXT_PRIMARY,
         spaceAfter=4, alignment=1,
     )
     subtitle_style = ParagraphStyle(
         "SubtitleX", parent=styles["Normal"], fontName="Helvetica",
-        fontSize=12, textColor=colors.HexColor("#6B7280"),
+        fontSize=12, textColor=TEXT_MUTED,
         spaceAfter=18, alignment=1,
     )
     section_style = ParagraphStyle(
@@ -1501,7 +1506,7 @@ def _build_pdf_report(
     body_style = styles["BodyText"]
     body_style.fontName = "Helvetica"
     body_style.fontSize = 10
-    body_style.textColor = colors.HexColor("#1F2937")
+    body_style.textColor = TEXT_PRIMARY
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -1548,10 +1553,11 @@ def _build_pdf_report(
         colWidths=[2 * inch, 4.5 * inch],
     )
     overview_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), PANEL),
         ("BACKGROUND", (0, 0), (0, -1), ROW_ALT),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#D1D5DB")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E5E7EB")),
+        ("BOX", (0, 0), (-1, -1), 0.5, DIVIDER),
+        ("INNERGRID", (0, 0), (-1, -1), 0.25, DIVIDER),
         ("LEFTPADDING", (0, 0), (-1, -1), 8),
         ("RIGHTPADDING", (0, 0), (-1, -1), 8),
         ("TOPPADDING", (0, 0), (-1, -1), 6),
@@ -1585,9 +1591,10 @@ def _build_pdf_report(
             ("FONTSIZE", (0, 0), (-1, 0), 10),
             ("ALIGN", (0, 0), (-1, 0), "LEFT"),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#D1D5DB")),
-            ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E5E7EB")),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
+            ("BACKGROUND", (0, 1), (-1, -1), PANEL),
+            ("BOX", (0, 0), (-1, -1), 0.5, DIVIDER),
+            ("INNERGRID", (0, 0), (-1, -1), 0.25, DIVIDER),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [PANEL, ROW_ALT]),
             ("LEFTPADDING", (0, 0), (-1, -1), 6),
             ("RIGHTPADDING", (0, 0), (-1, -1), 6),
             ("TOPPADDING", (0, 0), (-1, -1), 4),
@@ -1632,9 +1639,10 @@ def _build_pdf_report(
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, 0), 10),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#D1D5DB")),
-            ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E5E7EB")),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
+            ("BACKGROUND", (0, 1), (-1, -1), PANEL),
+            ("BOX", (0, 0), (-1, -1), 0.5, DIVIDER),
+            ("INNERGRID", (0, 0), (-1, -1), 0.25, DIVIDER),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [PANEL, ROW_ALT]),
             ("LEFTPADDING", (0, 0), (-1, -1), 6),
             ("RIGHTPADDING", (0, 0), (-1, -1), 6),
             ("TOPPADDING", (0, 0), (-1, -1), 4),
@@ -1667,7 +1675,7 @@ def _build_pdf_report(
             sub_style = ParagraphStyle(
                 "SubSection", parent=styles["Heading3"],
                 fontName="Helvetica-Bold", fontSize=11,
-                textColor=colors.HexColor("#1F2937"),
+                textColor=TEXT_PRIMARY,
                 spaceBefore=6, spaceAfter=4,
             )
             story.append(Paragraph(sub_title, sub_style))
@@ -1681,12 +1689,26 @@ def _build_pdf_report(
     attack_steps = analysis.get("attack_path_poc") or []
     if attack_steps:
         for i, step in enumerate(attack_steps, 1):
-            story.append(Paragraph(f"<b>Step {i}.</b> {step}", body_style))
+            if isinstance(step, dict):
+                text = step.get("narrative", step.get("description", str(step)))
+            else:
+                text = str(step)
+            story.append(Paragraph(f"<b>Step {i}.</b> {text}", body_style))
             story.append(Spacer(1, 3))
     else:
         story.append(Paragraph("<i>No attack path generated.</i>", body_style))
 
-    doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
+    def _bg_fill(canvas, doc):
+        canvas.saveState()
+        canvas.setFillColor(BG)
+        canvas.rect(0, 0, doc.pagesize[0], doc.pagesize[1], fill=1, stroke=0)
+        canvas.restoreState()
+
+    doc.build(
+        story,
+        onFirstPage=_bg_fill,
+        onLaterPages=_bg_fill,
+    )
     return buffer.getvalue()
 
 
@@ -1696,7 +1718,7 @@ def _footer(canvas, doc):
     from reportlab.lib.units import inch
     canvas.saveState()
     canvas.setFont("Helvetica", 8)
-    canvas.setFillColor(rl_colors.HexColor("#6B7280"))
+    canvas.setFillColor(rl_colors.HexColor("#8B8FA3"))
     canvas.drawString(0.75 * inch, 0.4 * inch, "Hyperion Security Engine")
     canvas.drawRightString(
         7.75 * inch, 0.4 * inch, f"Page {doc.page}",
