@@ -1495,8 +1495,8 @@ def _build_pdf_report(
         spaceAfter=4, alignment=1,
     )
     subtitle_style = ParagraphStyle(
-        "SubtitleX", parent=styles["Normal"], fontName="Helvetica",
-        fontSize=12, textColor=TEXT_MUTED,
+        "SubtitleX", parent=styles["Normal"], fontName="Helvetica-Bold",
+        fontSize=20, textColor=TEXT_PRIMARY,
         spaceAfter=18, alignment=1,
     )
     section_style = ParagraphStyle(
@@ -1526,7 +1526,6 @@ def _build_pdf_report(
         except Exception:
             pass
 
-    story.append(Paragraph("Hyperion Engine", title_style))
     story.append(Paragraph("Security Report", subtitle_style))
 
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
