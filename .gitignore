@@ -23,3 +23,6 @@ graphify-out/
 some_real_file.py
 pyyaml_only.txt
 AGENTS.md
+prompt2.md
+promptcont.md
+*.log
