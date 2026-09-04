@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hyperion_github_logo.png" height="200" alt="Hyperion Security Engine">
+  <img src="assets/hyperion_github_logo.png" height="280" alt="Hyperion Security Engine">
 </p>
 
 <h1 align="center">Hyperion Security Engine</h1>
@@ -117,24 +117,60 @@ The pipeline runs end-to-end inside the Streamlit app: input is dispatched to th
 
 ## Screenshots
 
-<table>
-  <tr>
-    <td><img src="assets/screenshots/Health.png" alt="Dashboard" width="100%"></td>
-    <td><img src="assets/screenshots/Scan%20findings.png" alt="Scan Findings" width="100%"></td>
-  </tr>
-  <tr>
-    <td><img src="assets/screenshots/Dependency%20fings.png" alt="Dependency Findings" width="100%"></td>
-    <td><img src="assets/screenshots/OWASP%20categories.png" alt="OWASP Categories" width="100%"></td>
-  </tr>
-  <tr>
-    <td><img src="assets/screenshots/Threat%20Modelling%20%26%20Attack%20Paths.png" alt="Threat Modeling" width="100%"></td>
-    <td><img src="assets/screenshots/Recommendations%20%26%20Hardening.png" alt="Recommendations" width="100%"></td>
-  </tr>
-  <tr>
-    <td><img src="assets/screenshots/Code%20Refactor.png" alt="Code Refactoring" width="100%"></td>
-    <td></td>
-  </tr>
-</table>
+### Dashboard
+
+The main command center showing real-time health score gauge, severity
+distribution donut, OWASP category breakdown, scan findings table,
+and dependency CVE findings — all in a single dense view.
+
+<p align="center">
+  <img src="assets/screenshots/Health.png" width="90%" alt="Health Score & Gauge">
+</p>
+<p align="center">
+  <img src="assets/screenshots/Scan%20findings.png" width="90%" alt="Scan Findings Table">
+</p>
+<p align="center">
+  <img src="assets/screenshots/Dependency%20fings.png" width="90%" alt="Dependency CVE Findings">
+</p>
+<p align="center">
+  <img src="assets/screenshots/OWASP%20categories.png" width="90%" alt="OWASP Categories">
+</p>
+
+---
+
+### Threat Modeling & Attack Paths
+
+AI-generated attack graph visualization using Graphviz, showing how
+vulnerabilities chain into exploitable attack paths. Includes
+narrative proof-of-concept steps mapped to each finding.
+
+<p align="center">
+  <img src="assets/screenshots/Threat%20Modelling%20%26%20Attack%20Paths.png" width="90%" alt="Threat Modeling & Attack Paths">
+</p>
+
+---
+
+### Recommendations & Hardening
+
+Three-panel remediation guidance: immediate fixes ranked by severity,
+architecture-level hardening measures, and CI/CD pipeline guardrails
+to prevent future vulnerabilities.
+
+<p align="center">
+  <img src="assets/screenshots/Recommendations%20%26%20Hardening.png" width="90%" alt="Recommendations & Hardening">
+</p>
+
+---
+
+### Code Refactoring
+
+Side-by-side diff view of original vs AI-refactored source code,
+with line-level change statistics and one-click download of the
+corrected file.
+
+<p align="center">
+  <img src="assets/screenshots/Code%20Refactor.png" width="90%" alt="Code Refactoring">
+</p>
 
 ---
 
@@ -199,13 +235,6 @@ Hyperion supports three input modes plus an offline demo mode.
 ### Paste Code Snippet
 
 Paste Python code into the editor and click **Scan**. Useful for quick analysis of single files or functions.
-
-<p align="center">
-  <img src="assets/screenshots/Health.png" width="80%" alt="Health Score Dashboard">
-  <img src="assets/screenshots/Scan%20findings.png" width="80%" alt="Scan Findings">
-  <img src="assets/screenshots/Dependency%20fings.png" width="80%" alt="Dependency Findings">
-  <img src="assets/screenshots/OWASP%20categories.png" width="80%" alt="OWASP Categories">
-</p>
 
 ### Upload File
 
