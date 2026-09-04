@@ -1419,6 +1419,8 @@ def render_code_refactoring_tab():
 
 def render_export_tab():
     """Render the Export Report tab: generate and download a PDF report."""
+    from datetime import datetime
+
     if "scan_results" not in st.session_state or not st.session_state["scan_results"]:
         _md('<div class="empty-state">Run a scan to generate a PDF report.</div>')
         return
