@@ -1496,7 +1496,7 @@ def _build_pdf_report(
         borderPadding=(4, 6, 4, 6), spaceBefore=10, spaceAfter=8,
         leftIndent=0,
     )
-    body_style = styles["Body"]
+    body_style = styles["BodyText"]
     body_style.fontName = "Helvetica"
     body_style.fontSize = 10
     body_style.textColor = colors.HexColor("#1F2937")
