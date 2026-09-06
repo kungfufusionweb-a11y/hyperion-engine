@@ -14,6 +14,11 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <a href="https://www.reportlab.com/"><img src="https://img.shields.io/badge/reportlab-5.0-blue?style=for-the-badge" alt="ReportLab"></a>
   <a href="https://plotly.com/python/"><img src="https://img.shields.io/badge/plotly-7.0-3F4F75?style=for-the-badge&logo=plotly&logoColor=white" alt="Plotly"></a>
+  <a href="https://pandas.pydata.org/"><img src="https://img.shields.io/badge/pandas-3.0-150458?style=for-the-badge&logo=pandas&logoColor=white" alt="Pandas"></a>
+  <a href="https://graphviz.org/"><img src="https://img.shields.io/badge/graphviz-0.21-2E8B57?style=for-the-badge&logo=graphviz&logoColor=white" alt="Graphviz"></a>
+  <a href="https://pyyaml.org/"><img src="https://img.shields.io/badge/PyYAML-6.0-CB171E?style=for-the-badge&logo=yaml&logoColor=white" alt="PyYAML"></a>
+  <a href="https://docs.python.org/3/library/urllib.html"><img src="https://img.shields.io/badge/urllib-stdlib-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="urllib"></a>
+  <a href="https://openrouter.ai/"><img src="https://img.shields.io/badge/OpenAI--Compatible-API-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI Compatible API"></a>
 </p>
 
 ---
@@ -225,6 +230,16 @@ Hyperion reads its LLM credentials from environment variables. All variables are
 | `HYPERION_LLM_MODEL` | Model identifier to request | Yes (for live AI features) |
 
 If any of the above is missing or the API call fails, the engine falls back to a deterministic local analysis (`ai_fallback.py`) so the UI remains fully usable.
+
+**Getting an API key:** Hyperion works with any OpenAI-compatible LLM
+endpoint. You can obtain a key from providers such as
+[OpenRouter](https://openrouter.ai/),
+[DeepSeek](https://platform.deepseek.com/),
+[Together AI](https://www.together.ai/), or any other OpenAI-compatible
+API provider. Set `HYPERION_LLM_API_URL` to match your chosen provider's
+endpoint (for example, `https://openrouter.ai/api/v1/chat/completions`
+for OpenRouter) and `HYPERION_LLM_MODEL` to the model identifier your
+provider expects.
 
 ---
 
