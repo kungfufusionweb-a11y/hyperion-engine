@@ -1908,6 +1908,12 @@ def main():
                             "source_code": source_code,
                         }
 
+                        st.session_state["scan_results"] = output
+                        st.session_state["analysis_source"] = (
+                            "live" if has_real_llm_response(analysis)
+                            else "fallback"
+                        )
+
                     elif mode == "GitHub repo URL":
                         repo_scan_started_at = time.perf_counter()
                         result = scan_repository(repo_url)
@@ -1937,11 +1943,10 @@ def main():
                             st.warning(f"Repository scan error: {result['error']}")
 
                         st.session_state["scan_results"] = output
-                    st.session_state["analysis_source"] = (
-                        "live" if has_real_llm_response(analysis)
-                        else "fallback"
-                    )
+                        st.session_state["analysis_source"] = "fallback"
+
                     st.success("Scan complete. View results in the tabs below.")
+                    st.rerun()
 
             except Exception as e:
                 st.error(f"Unexpected error during scan: {e}")
