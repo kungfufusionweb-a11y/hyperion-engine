@@ -1,0 +1,11 @@
+# Intentionally outdated packages for CVE detection demo purposes.
+# These are NOT installed as part of the main app — they exist only
+# so dependency_check.py has real known-vulnerable packages to scan
+# and report on when the dashboard runs a dependency check against
+# this file specifically.
+#
+# Usage: check_dependencies("requirements-demo.txt") can be called
+# manually or via demo tooling to showcase CVE detection with real
+# GHSA/CVE identifiers (pyyaml CVE-2020-14343, flask CVE-2023-30861).
+pyyaml==5.3
+flask==2.2.0

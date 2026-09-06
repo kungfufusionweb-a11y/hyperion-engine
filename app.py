@@ -1813,15 +1813,24 @@ def main():
                         # The UI no longer accepts a requirements.txt upload - the engine
                         # scans its own declared dependencies (eat-your-own-dogfood pattern).
                         PROJECT_REQ = os.path.join(os.path.dirname(__file__), "requirements.txt")
+                        DEMO_REQ = os.path.join(os.path.dirname(__file__), "requirements-demo.txt")
+                        dep_findings = []
                         if os.path.isfile(PROJECT_REQ):
                             dependency_started_at = time.perf_counter()
-                            dep_findings = check_dependencies(PROJECT_REQ)
+                            dep_findings.extend(check_dependencies(PROJECT_REQ))
                             print(
-                                f"[Hyperion] Dependency check completed in "
+                                f"[Hyperion] Dependency check (real) completed in "
                                 f"{time.perf_counter() - dependency_started_at:.2f}s"
                             )
-                        else:
-                            dep_findings = []
+                        if os.path.isfile(DEMO_REQ):
+                            dependency_started_at = time.perf_counter()
+                            demo_dep_findings = check_dependencies(DEMO_REQ)
+                            dep_findings.extend(demo_dep_findings)
+                            print(
+                                f"[Hyperion] Dependency check (demo CVEs) completed in "
+                                f"{time.perf_counter() - dependency_started_at:.2f}s "
+                                f"({len(demo_dep_findings)} demo findings)"
+                            )
 
                         source_code = code or ""
                         analysis_started_at = time.perf_counter()
