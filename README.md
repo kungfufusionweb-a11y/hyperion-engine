@@ -19,6 +19,10 @@
   <a href="https://pyyaml.org/"><img src="https://img.shields.io/badge/PyYAML-6.0-CB171E?style=for-the-badge&logo=yaml&logoColor=white" alt="PyYAML"></a>
   <a href="https://docs.python.org/3/library/urllib.html"><img src="https://img.shields.io/badge/urllib-stdlib-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="urllib"></a>
   <a href="https://openrouter.ai/"><img src="https://img.shields.io/badge/OpenAI--Compatible-API-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI Compatible API"></a>
+  <a href="https://osv.dev/"><img src="https://img.shields.io/badge/OSV.dev-API-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="OSV.dev"></a>
+  <a href="https://bandit.readthedocs.io/"><img src="https://img.shields.io/badge/bandit-reference-yellow?style=for-the-badge&logo=python&logoColor=white" alt="Bandit"></a>
+  <a href="https://cheatsheetseries.owasp.org/"><img src="https://img.shields.io/badge/OWASP-CheatSheetSeries-000000?style=for-the-badge&logo=owasp&logoColor=white" alt="OWASP CheatSheetSeries"></a>
+  <a href="https://github.com/google/osv-schema"><img src="https://img.shields.io/badge/osv--schema-reference-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="osv-schema"></a>
 </p>
 
 ---
