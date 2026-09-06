@@ -100,6 +100,22 @@ def render_severity_badge(severity: str) -> str:
     )
 
 
+def has_real_llm_response(analysis: dict | None) -> bool:
+    """True if the analysis dict looks like a real LLM response (not fallback).
+
+    A real LLM run populates recommendations with non-empty
+    architecture_hardening; the deterministic fallback leaves it empty.
+    """
+    if not isinstance(analysis, dict):
+        return False
+    recommendations = analysis.get("recommendations") or {}
+    return (
+        isinstance(recommendations, dict)
+        and len(recommendations) > 0
+        and len(recommendations.get("architecture_hardening") or []) > 0
+    )
+
+
 # ---------------------------------------------------------------------------
 # CSS injection
 # ---------------------------------------------------------------------------
@@ -1129,6 +1145,46 @@ def render_dashboard_tab():
     analysis = results.get("analysis")
     has_analysis = isinstance(analysis, dict)
 
+    # ---- AI analysis source badge ----
+    # Determine whether analysis came from real LLM, deterministic fallback,
+    # or cached result. Session-state flag takes precedence; fall back to
+    # the dict-shape heuristic if the flag is missing (older cache).
+    if has_analysis:
+        source_flag = st.session_state.get("analysis_source")
+        if source_flag == "cache":
+            badge_label = "AI Analysis: Cached"
+            badge_color = "var(--accent)"
+        elif source_flag in ("live", "fallback"):
+            badge_label = (
+                "AI Analysis: Live"
+                if source_flag == "live"
+                else "AI Analysis: Deterministic Fallback"
+            )
+            badge_color = (
+                "var(--low)" if source_flag == "live" else "var(--medium)"
+            )
+        else:
+            recommendations = analysis.get("recommendations") or {}
+            arch_hardening = recommendations.get("architecture_hardening") or []
+            is_live = (
+                isinstance(recommendations, dict)
+                and len(recommendations) > 0
+                and len(arch_hardening) > 0
+            )
+            badge_label = (
+                "AI Analysis: Live" if is_live
+                else "AI Analysis: Deterministic Fallback"
+            )
+            badge_color = "var(--low)" if is_live else "var(--medium)"
+        _md(
+            f'<div class="analysis-source-badge" '
+            f'style="display:inline-block; padding:3px 10px; margin-bottom:10px; '
+            f'border:1px solid {badge_color}; border-radius:3px; '
+            f'color:{badge_color}; font-size:0.7rem; font-weight:600; '
+            f'letter-spacing:0.08em; text-transform:uppercase;">'
+            f'{badge_label}</div>'
+        )
+
     # ---- Row 1: KPI strip ----
     total_findings = len(scan_findings) + len(dep_findings)
 
@@ -1780,6 +1836,7 @@ def main():
         cached = demo_cache.load_cache("demo_snippet")
         if cached:
             st.session_state["scan_results"] = cached
+            st.session_state["analysis_source"] = "cache"
             st.success("Demo loaded from cache.")
             st.rerun()
         else:
@@ -1879,7 +1936,12 @@ def main():
                         if result["error"]:
                             st.warning(f"Repository scan error: {result['error']}")
 
-                    st.session_state["scan_results"] = output
+                        st.session_state["scan_results"] = output
+                        st.session_state["analysis_source"] = "fallback"
+                    st.session_state["analysis_source"] = (
+                        "live" if has_real_llm_response(analysis)
+                        else "fallback"
+                    )
                     st.success("Scan complete. View results in the tabs below.")
 
             except Exception as e:
