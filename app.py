@@ -1937,7 +1937,6 @@ def main():
                             st.warning(f"Repository scan error: {result['error']}")
 
                         st.session_state["scan_results"] = output
-                        st.session_state["analysis_source"] = "fallback"
                     st.session_state["analysis_source"] = (
                         "live" if has_real_llm_response(analysis)
                         else "fallback"
