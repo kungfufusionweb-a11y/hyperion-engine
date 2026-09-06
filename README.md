@@ -12,17 +12,17 @@
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12"></a>
   <a href="https://streamlit.io/"><img src="https://img.shields.io/badge/streamlit-1.62-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit 1.62"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License: MIT"></a>
-  <a href="https://www.reportlab.com/"><img src="https://www.reportlab.com/static/img/RL-wide-v2.svg" height="28" style="vertical-align:middle;" alt="ReportLab"> <img src="https://img.shields.io/badge/5.0-red?style=for-the-badge" alt="ReportLab 5.0"></a>
+  <a href="https://www.reportlab.com/"><img src="https://img.shields.io/badge/reportlab-5.0-2E3192?style=for-the-badge" alt="ReportLab"></a>
   <a href="https://plotly.com/python/"><img src="https://img.shields.io/badge/plotly-7.0-3F4F75?style=for-the-badge&logo=plotly&logoColor=white" alt="Plotly"></a>
   <a href="https://pandas.pydata.org/"><img src="https://img.shields.io/badge/pandas-3.0-150458?style=for-the-badge&logo=pandas&logoColor=white" alt="Pandas"></a>
-  <a href="https://graphviz.org/"><img src="https://graphviz.org/Resources/app.png" height="28" style="vertical-align:middle;" alt="Graphviz"> <img src="https://img.shields.io/badge/0.21-2E8B57?style=for-the-badge" alt="Graphviz 0.21"></a>
+  <a href="https://graphviz.org/"><img src="https://img.shields.io/badge/graphviz-0.21-2E8B57?style=for-the-badge" alt="Graphviz"></a>
   <a href="https://pyyaml.org/"><img src="https://img.shields.io/badge/PyYAML-6.0-CB171E?style=for-the-badge&logo=yaml&logoColor=white" alt="PyYAML"></a>
   <a href="https://docs.python.org/3/library/urllib.html"><img src="https://img.shields.io/badge/urllib-stdlib-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="urllib"></a>
-  <a href="https://openai.com/"><img src="https://openai.com/favicon.ico" height="28" style="vertical-align:middle;" alt="OpenAI Compatible"> <img src="https://img.shields.io/badge/Compatible-API-412991?style=for-the-badge" alt="OpenAI Compatible API"></a>
-  <a href="https://osv.dev/"><img src="https://osv.dev/static/img/logo.png" height="28" style="vertical-align:middle;" alt="OSV.dev"> <img src="https://img.shields.io/badge/OSV.dev-API-1A1A1A?style=for-the-badge" alt="OSV.dev"></a>
+  <a href="https://openai.com/"><img src="https://img.shields.io/badge/OpenAI--Compatible-API-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI Compatible API"></a>
+  <a href="https://osv.dev/"><img src="https://img.shields.io/badge/OSV.dev-API-4285F4?style=for-the-badge" alt="OSV.dev"></a>
   <a href="https://bandit.readthedocs.io/"><img src="https://img.shields.io/badge/bandit-reference-yellow?style=for-the-badge&logo=python&logoColor=white" alt="Bandit"></a>
-  <a href="https://cheatsheetseries.owasp.org/"><img src="https://img.shields.io/badge/OWASP-CheatSheetSeries-000000?style=for-the-badge&logo=owasp&logoColor=white" alt="OWASP CheatSheetSeries"></a>
-  <a href="https://github.com/google/osv-schema"><img src="https://osv.dev/static/img/logo.png" height="28" style="vertical-align:middle;" alt="osv-schema"> <img src="https://img.shields.io/badge/osv--schema-reference-1A1A1A?style=for-the-badge" alt="osv-schema"></a>
+  <a href="https://cheatsheetseries.owasp.org/"><img src="https://img.shields.io/badge/OWASP-CheatSheetSeries-000000?style=for-the-badge" alt="OWASP CheatSheetSeries"></a>
+  <a href="https://github.com/google/osv-schema"><img src="https://img.shields.io/badge/osv--schema-reference-4285F4?style=for-the-badge" alt="osv-schema"></a>
 </p>
 
 ---
