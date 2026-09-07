@@ -11,6 +11,16 @@ import difflib
 import time
 from pathlib import Path
 from collections import Counter
+import logging as _logging
+
+
+class _AnalysisSourceCapture(_logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.records = []
+
+    def emit(self, record):
+        self.records.append(self.format(record))
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -97,22 +107,6 @@ def render_severity_badge(severity: str) -> str:
         f'border:1px solid {color};color:{color};font-family:\'JetBrains Mono\',monospace;'
         f'font-size:0.65rem;letter-spacing:0.05em;border-radius:2px;'
         f'line-height:1.4;">{label}</span>'
-    )
-
-
-def has_real_llm_response(analysis: dict | None) -> bool:
-    """True if the analysis dict looks like a real LLM response (not fallback).
-
-    A real LLM run populates recommendations with non-empty
-    architecture_hardening; the deterministic fallback leaves it empty.
-    """
-    if not isinstance(analysis, dict):
-        return False
-    recommendations = analysis.get("recommendations") or {}
-    return (
-        isinstance(recommendations, dict)
-        and len(recommendations) > 0
-        and len(recommendations.get("architecture_hardening") or []) > 0
     )
 
 
@@ -1150,32 +1144,14 @@ def render_dashboard_tab():
     # or cached result. Session-state flag takes precedence; fall back to
     # the dict-shape heuristic if the flag is missing (older cache).
     if has_analysis:
-        source_flag = st.session_state.get("analysis_source")
-        if source_flag == "cache":
-            badge_label = "AI Analysis: Cached"
-            badge_color = "var(--accent)"
-        elif source_flag in ("live", "fallback"):
-            badge_label = (
-                "AI Analysis: Live"
-                if source_flag == "live"
-                else "AI Analysis: Deterministic Fallback"
-            )
-            badge_color = (
-                "var(--low)" if source_flag == "live" else "var(--medium)"
-            )
-        else:
-            recommendations = analysis.get("recommendations") or {}
-            arch_hardening = recommendations.get("architecture_hardening") or []
-            is_live = (
-                isinstance(recommendations, dict)
-                and len(recommendations) > 0
-                and len(arch_hardening) > 0
-            )
-            badge_label = (
-                "AI Analysis: Live" if is_live
-                else "AI Analysis: Deterministic Fallback"
-            )
-            badge_color = "var(--low)" if is_live else "var(--medium)"
+        source_flag = st.session_state.get("analysis_source", "unknown")
+        badge_map = {
+            "cache": ("AI Analysis: Cached", "var(--accent)"),
+            "live": ("AI Analysis: Live", "var(--low)"),
+            "fallback": ("AI Analysis: Deterministic Fallback", "var(--medium)"),
+            "unknown": ("AI Analysis: Unknown Source", "var(--text-muted)"),
+        }
+        badge_label, badge_color = badge_map.get(source_flag, badge_map["unknown"])
         _md(
             f'<div class="analysis-source-badge" '
             f'style="display:inline-block; padding:3px 10px; margin-bottom:10px; '
@@ -1891,11 +1867,27 @@ def main():
 
                         source_code = code or ""
                         analysis_started_at = time.perf_counter()
-                        analysis = get_analysis(
-                            scan_findings=scan_findings,
-                            dep_findings=dep_findings,
-                            source_code=source_code,
-                        )
+
+                        _capture_handler = _AnalysisSourceCapture()
+                        _capture_handler.setLevel(_logging.WARNING)
+                        _ai_logger = _logging.getLogger("hyperion.ai_llm")
+                        _ai_logger.addHandler(_capture_handler)
+                        try:
+                            analysis = get_analysis(
+                                scan_findings=scan_findings,
+                                dep_findings=dep_findings,
+                                source_code=source_code,
+                            )
+                        finally:
+                            _ai_logger.removeHandler(_capture_handler)
+
+                        _log_text = " ".join(_capture_handler.records)
+                        if "llm_success" in _log_text:
+                            st.session_state["analysis_source"] = "live"
+                        elif "fallback_triggered" in _log_text:
+                            st.session_state["analysis_source"] = "fallback"
+                        else:
+                            st.session_state["analysis_source"] = "unknown"
                         print(
                             f"[Hyperion] AI analysis completed in "
                             f"{time.perf_counter() - analysis_started_at:.2f}s"
@@ -1909,10 +1901,7 @@ def main():
                         }
 
                         st.session_state["scan_results"] = output
-                        st.session_state["analysis_source"] = (
-                            "live" if has_real_llm_response(analysis)
-                            else "fallback"
-                        )
+                        st.session_state["analysis_source"] = "fallback"
 
                     elif mode == "GitHub repo URL":
                         repo_scan_started_at = time.perf_counter()
