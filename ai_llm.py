@@ -143,6 +143,39 @@ def _strip_code_fences(text: str) -> str:
     return body.strip()
 
 
+def _extract_json_object(text: str) -> str:
+    """Extract the first complete JSON object from text, discarding
+    any surrounding prose. Handles models that ignore 'JSON only'
+    instructions and add explanatory text before/after the JSON.
+    """
+    start = text.find("{")
+    if start == -1:
+        return text
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start, len(text)):
+        char = text[i]
+        if escape:
+            escape = False
+            continue
+        if char == "\\":
+            escape = True
+            continue
+        if char == '"' and not escape:
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:i + 1]
+    return text[start:]
+
+
 def _call_llm_api(system_prompt: str, user_prompt: str, api_key: str) -> str:
     """Perform the actual HTTP call to the LLM endpoint.
 
@@ -288,7 +321,7 @@ def _analyze_impl(
         )
 
     try:
-        parsed = json.loads(_strip_code_fences(raw_response))
+        parsed = json.loads(_extract_json_object(_strip_code_fences(raw_response)))
     except Exception as exc:
         return _fallback(
             scan_findings, dep_findings, source_code,
