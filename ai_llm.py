@@ -183,6 +183,16 @@ def _call_llm_api(system_prompt: str, user_prompt: str, api_key: str) -> str:
         raise
     try:
         body = json.loads(raw_body)
+    except json.JSONDecodeError as exc:
+        error_pos = exc.pos
+        context_start = max(0, error_pos - 100)
+        context_end = min(len(raw_body), error_pos + 100)
+        raise ValueError(
+            f"invalid_json: could not parse API response body: {exc}; "
+            f"body[:200]={raw_body[:200]!r}; "
+            f"context_around_error={raw_body[context_start:context_end]!r}; "
+            f"total_length={len(raw_body)}"
+        ) from exc
     except Exception as exc:
         raise ValueError(
             f"invalid_json: could not parse API response body: {exc}; "
