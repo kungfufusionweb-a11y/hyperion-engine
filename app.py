@@ -1901,7 +1901,6 @@ def main():
                         }
 
                         st.session_state["scan_results"] = output
-                        st.session_state["analysis_source"] = "fallback"
 
                     elif mode == "GitHub repo URL":
                         repo_scan_started_at = time.perf_counter()
