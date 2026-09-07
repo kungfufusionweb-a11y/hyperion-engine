@@ -170,8 +170,10 @@ def _call_llm_api(system_prompt: str, user_prompt: str, api_key: str) -> str:
         },
         method="POST",
     )
+    model_name = os.environ.get(_ENV_MODEL, _DEFAULT_MODEL)
     logger.info(
-        "llm_api_call starting (timeout=%ds, url=%s)",
+        "llm_api_call starting (model=%s, timeout=%ds, url=%s)",
+        model_name,
         _API_TIMEOUT_SECONDS,
         os.environ.get(_ENV_API_URL, _DEFAULT_API_URL),
     )
@@ -302,7 +304,8 @@ def _analyze_impl(
         )
 
     elapsed = time.perf_counter() - started_at
-    logger.warning("llm_success in %.2fs", elapsed)
+    model_name = os.environ.get(_ENV_MODEL, _DEFAULT_MODEL)
+    logger.warning("llm_success (model=%s) in %.2fs", model_name, elapsed)
     return parsed
 
 
