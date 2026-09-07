@@ -1889,6 +1889,10 @@ def main():
                         else:
                             st.session_state["analysis_source"] = "unknown"
                         print(
+                            f"[Hyperion] Analysis source: {st.session_state['analysis_source']} "
+                            f"| {_log_text if _log_text else 'no ai_llm log captured'}"
+                        )
+                        print(
                             f"[Hyperion] AI analysis completed in "
                             f"{time.perf_counter() - analysis_started_at:.2f}s"
                         )
