@@ -115,20 +115,20 @@ def scan_repository(github_url: str) -> dict[str, Any]:
         except subprocess.CalledProcessError as e:
             result["error"] = f"Failed to clone repository: {e.stderr.decode('utf-8', errors='ignore').strip()}"
             return result
-        
+
         # Check if we got anything
         if not repo_path.exists() or not any(repo_path.iterdir()):
             result["error"] = "Cloned repository appears to be empty"
             return result
-        
+
         # Walk the repository to find Python files
         py_files: list[Path] = []
         skip_dirs = {"venv", "__pycache__", ".git", "node_modules"}
-        
+
         for root, dirs, files in os.walk(repo_path):
             # Modify dirs in-place to skip unwanted directories
             dirs[:] = [d for d in dirs if d not in skip_dirs]
-            
+
             for file in files:
                 if file.endswith(".py"):
                     file_path = Path(root) / file
